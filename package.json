@@ -1,0 +1,26 @@
+{
+    "name": "node-limesurvey",
+    "version": "0.0.1",
+    "description": "A limesurvey node.js client (with promise)",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/sguilly/node-limesurvey.git"
+    },
+    "keywords": [
+        "node.js",
+        "limesurvey"
+    ],
+    "author": "Stéphane GUILLY",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/sguilly/node-limesurvey/issues"
+    },
+    "homepage": "https://github.com/sguilly/node-limesurvey#readme",
+    "dependencies": {
+        "node-fetch": "^2.3.0"
+    }
+}
