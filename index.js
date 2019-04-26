@@ -50,8 +50,12 @@ class client {
         return this.callApi('get_session_key', [this.username, this.password]).then((token) => { this.token = token })
     }
 
-    getSurvey() {
+    getSurveyList() {
         return this.callApi('list_surveys', [this.token, null])
+    }
+
+    getSurveyInfo(surveyId) {
+        return this.callApi('get_survey_properties', [this.token, surveyId])
     }
 
     getGroups(surveyId) {
@@ -68,12 +72,27 @@ class client {
         return this.callApi('list_questions', params)
     }
 
-    async getResponses(surveyId) {
+    async getResponsesBySurveyId(surveyId) {
         var json = await this.callApi('export_responses', [this.token, surveyId, 'json', null, 'all', 'code', 'long'])
 
         let obj = JSON.parse(Buffer.from(json, 'base64').toString('utf-8'))
 
         return obj.responses
+    }
+
+    async getResponsesByToken(surveyId, tokenId) {
+        var json = await this.callApi('export_responses_by_token', [this.token, surveyId, 'json', tokenId, null, 'all', 'code', 'long'])
+
+        let obj = JSON.parse(Buffer.from(json, 'base64').toString('utf-8'))
+        return obj.responses
+    }
+
+    async getStatistics(surveyId, format) {
+        var fileContent = await this.callApi('export_statistics', [this.token, surveyId, format, null, 'yes'])
+
+        let obj = Buffer.from(fileContent, 'base64')
+
+        return obj
     }
 
     activateTokens(surveyId) {
@@ -84,7 +103,7 @@ class client {
         return this.callApi('add_participants', [this.token, surveyId, participants])
     }
 
-    async getPrettyResponses(surveyId) {
+    async getPrettyResponses(surveyId, tokenId) {
 
         let groups = await this.getGroups(surveyId)
 
@@ -95,7 +114,7 @@ class client {
         }
         //console.log('groupsByGid', groupsByGid)
 
-        let questions = await this.getQuestions(surveyId)
+        let questions = await this.getQuestions(surveyId, tokenId)
 
 
         var titleByQid = {}
@@ -112,7 +131,7 @@ class client {
 
         console.log('questionsByCode', questionsByCode)
 
-        let reponses = await this.getResponses(surveyId)
+        let reponses = await this.getResponsesBySurveyId(surveyId)
 
         var prettyResponses = []
 
