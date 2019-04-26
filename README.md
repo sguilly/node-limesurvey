@@ -10,6 +10,8 @@ More info : https://manual.limesurvey.org/RemoteControl_2_API
 # Code example
 
 ``` js
+var fs = require('fs')
+
 var limesurvey = require('node-limesurvey')({
     url: 'https://xxxxxxxx/index.php/admin/remotecontrol',
     username: 'xxxxx',
@@ -19,18 +21,32 @@ var limesurvey = require('node-limesurvey')({
 
 var start = async() => {
 
-    let token = await limesurvey.getToken()
-
+       let token = await limesurvey.getToken()
     console.log('token', token)
 
-    let surveys = await limesurvey.getSurvey()
+    let surveys = await limesurvey.getSurveyList()
     console.log('surveys=', surveys)
+
+    let survey = await limesurvey.getSurveyInfo('37436')
+    console.log('survey=', survey)
 
     let questions = await limesurvey.getQuestions('37436')
     console.log('questions', questions)
 
-    let responses = await limesurvey.getResponses('37436')
-    console.log('responses', responses)
+    let groups = await limesurvey.getGroups('37436')
+    console.log('groups', groups)
+
+    let responses = await limesurvey.getResponsesBySurveyId('37436')
+    console.log(responses)
+
+    let responses = await limesurvey.getResponsesByToken('37436', 'nKSAOM6JBYBDs2Q')
+    console.log(responses)
+
+    let prettyResponses = await limesurvey.getPrettyResponses('37436')
+    console.log(JSON.stringify(prettyResponses, null, 3))
+
+    let content = await limesurvey.getStatistics('37436', 'xls')
+    fs.writeFile('/docs/stat.xls', content)
 
 }
 
