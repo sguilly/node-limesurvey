@@ -21,6 +21,7 @@
     },
     "homepage": "https://github.com/sguilly/node-limesurvey#readme",
     "dependencies": {
+        "debug": "^4.1.1",
         "node-fetch": "^2.3.0"
     }
 }

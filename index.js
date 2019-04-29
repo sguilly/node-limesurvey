@@ -1,4 +1,5 @@
 'use strict';
+const debug = require('debug')('limesurvey')
 
 const fetch = require('node-fetch');
 
@@ -17,9 +18,15 @@ class client {
 
     callApi(method, params) {
 
-        console.log('params=', params)
+        debug('---------------')
+        debug('method=', method)
+        debug('params=', params)
 
-        return new Promise((resolve, reject) => {
+        return new Promise(async(resolve, reject) => {
+
+            if (method !== 'get_session_key') {
+                params.unshift(await this.getToken())
+            }
 
             fetch(this.limesurveyUrl, {
                     method: 'post',
@@ -28,11 +35,11 @@ class client {
                 })
                 .then((res) => {
 
-                    console.log('res=', res.ok)
+                    debug('res=', res.ok)
                     return res.json()
                 })
                 .then(json => {
-                    console.log('json=', json)
+                    debug('json=', json)
 
                     if (json && json.result) {
                         resolve(json.result)
@@ -47,24 +54,38 @@ class client {
     }
 
     getToken() {
-        return this.callApi('get_session_key', [this.username, this.password]).then((token) => { this.token = token })
+
+        if (this.token && this.regenerateAfter && new Date().getTime() < this.regenerateAfter) {
+
+            debug('from cache')
+            return Promise.resolve(this.token)
+        } else {
+
+            debug('ask new token')
+            return this.callApi('get_session_key', [this.username, this.password]).then((token) => {
+                this.token = token
+                this.regenerateAfter = new Date().getTime() + (2 * 60 * 60 * 1000)
+
+            })
+        }
+
     }
 
     getSurveyList() {
-        return this.callApi('list_surveys', [this.token, null])
+        return this.callApi('list_surveys', [null])
     }
 
     getSurveyInfo(surveyId) {
-        return this.callApi('get_survey_properties', [this.token, surveyId])
+        return this.callApi('get_survey_properties', [surveyId])
     }
 
     getGroups(surveyId) {
-        return this.callApi('list_groups', [this.token, surveyId])
+        return this.callApi('list_groups', [surveyId])
     }
 
     getQuestions(surveyId, groupId) {
 
-        let params = [this.token, surveyId]
+        let params = [surveyId]
 
         if (groupId) {
             params.push(groupId)
@@ -73,7 +94,7 @@ class client {
     }
 
     async getResponsesBySurveyId(surveyId) {
-        var json = await this.callApi('export_responses', [this.token, surveyId, 'json', null, 'all', 'code', 'long'])
+        var json = await this.callApi('export_responses', [surveyId, 'json', null, 'all', 'code', 'long'])
 
         let obj = JSON.parse(Buffer.from(json, 'base64').toString('utf-8'))
 
@@ -81,14 +102,14 @@ class client {
     }
 
     async getResponsesByToken(surveyId, tokenId) {
-        var json = await this.callApi('export_responses_by_token', [this.token, surveyId, 'json', tokenId, null, 'all', 'code', 'long'])
+        var json = await this.callApi('export_responses_by_token', [surveyId, 'json', tokenId, null, 'all', 'code', 'long'])
 
         let obj = JSON.parse(Buffer.from(json, 'base64').toString('utf-8'))
         return obj.responses
     }
 
     async getStatistics(surveyId, format) {
-        var fileContent = await this.callApi('export_statistics', [this.token, surveyId, format, null, 'yes'])
+        var fileContent = await this.callApi('export_statistics', [surveyId, format, null, 'yes'])
 
         let obj = Buffer.from(fileContent, 'base64')
 
@@ -96,11 +117,11 @@ class client {
     }
 
     activateTokens(surveyId) {
-        return this.callApi('activate_tokens', [this.token, surveyId])
+        return this.callApi('activate_tokens', [surveyId])
     }
 
     addParticipants(surveyId, participants) {
-        return this.callApi('add_participants', [this.token, surveyId, participants])
+        return this.callApi('add_participants', [surveyId, participants])
     }
 
     async getPrettyResponses(surveyId, tokenId) {
@@ -112,7 +133,7 @@ class client {
         for (let group of groups) {
             groupsByGid[group.gid] = group
         }
-        //console.log('groupsByGid', groupsByGid)
+        //debug('groupsByGid', groupsByGid)
 
         let questions = await this.getQuestions(surveyId, tokenId)
 
@@ -129,7 +150,7 @@ class client {
             questionsByCode[question.title] = question
         }
 
-        console.log('questionsByCode', questionsByCode)
+        debug('questionsByCode', questionsByCode)
 
         let reponses = await this.getResponsesBySurveyId(surveyId)
 
@@ -147,11 +168,11 @@ class client {
 
                     let question = questionsByCode[code]
                     if (question) {
-                        //console.log(code, question.question, response[index][code])
+                        //debug(code, question.question, response[index][code])
 
                         let group = groupsByGid[question.gid]
 
-                        //console.log(group)
+                        //debug(group)
 
                         prettyResponse.push({ code: code, qid: question.qid, groupOrder: group.group_order, groupName: group.group_name, order: question.question_order, question: question.question, value: response[index][code], question: question })
                     }
