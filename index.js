@@ -18,15 +18,19 @@ class client {
 
     callApi(method, params) {
 
-        debug('---------------')
-        debug('method=', method)
-        debug('params=', params)
-
         return new Promise(async(resolve, reject) => {
 
             if (method !== 'get_session_key') {
-                params.unshift(await this.getToken())
+
+                let token = await this.getToken()
+
+                params.unshift(token)
             }
+
+            debug('---------------')
+
+            debug('method=', method)
+            debug('params=', params)
 
             fetch(this.limesurveyUrl, {
                     method: 'post',
@@ -53,21 +57,22 @@ class client {
         })
     }
 
-    getToken() {
+    async getToken() {
 
         if (this.token && this.regenerateAfter && new Date().getTime() < this.regenerateAfter) {
 
             debug('from cache')
-            return Promise.resolve(this.token)
+            return this.token
         } else {
 
             debug('ask new token')
-            return this.callApi('get_session_key', [this.username, this.password]).then((token) => {
-                this.token = token
-                this.regenerateAfter = new Date().getTime() + (2 * 60 * 60 * 1000)
+            this.token = await this.callApi('get_session_key', [this.username, this.password])
+            this.regenerateAfter = new Date().getTime() + (2 * 60 * 60 * 1000)
 
-            })
+            return this.token
         }
+
+
 
     }
 
