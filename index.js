@@ -129,7 +129,7 @@ class client {
         return this.callApi('add_participants', [surveyId, participants])
     }
 
-    async getPrettyResponses(surveyId, tokenId) {
+    async getPrettyResponses(surveyId, tokenId, aggregateByGroup = false) {
 
         let groups = await this.getGroups(surveyId)
 
@@ -179,7 +179,7 @@ class client {
 
                         //debug(group)
 
-                        prettyResponse.push({ code: code, qid: question.qid, groupOrder: group.group_order, groupName: group.group_name, order: question.question_order, question: question.question, value: response[index][code], question: question })
+                        prettyResponse.push({ code: code, qid: question.qid, groupOrder: group.group_order, groupName: group.group_name, order: question.question_order, questionName: question.question, value: response[index][code], /*question: question*/ })
                     }
                 }
             }
@@ -200,9 +200,27 @@ class client {
 
             })
 
+            if(aggregateByGroup === true)
+            {
+                            let prettyResponseByGroup = {}
 
+            for(let item of prettyResponse)
+            {
+                if(prettyResponseByGroup[item.groupName])
+                {
+                    prettyResponseByGroup[item.groupName].push(item)
+                }
+                else{
+                    prettyResponseByGroup[item.groupName] = [item]
+                }
+            }
+            prettyResponses.push(prettyResponseByGroup)
+            
+            }
+            else{
+                prettyResponses.push(prettyResponse)
+            }
 
-            prettyResponses.push(prettyResponse)
 
         }
 
